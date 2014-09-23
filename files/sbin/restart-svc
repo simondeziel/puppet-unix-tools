@@ -1,0 +1,141 @@
+#!/bin/sh
+
+# Author: Simon Deziel
+
+# Explicitly set the PATH to that of ENV_SUPATH in /etc/login.defs and unset
+# various other variables. For details, see:
+# https://wiki.ubuntu.com/SecurityTeam/AppArmorPolicyReview#Execute_rules
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export ENV=
+export CDPATH=
+
+CHECK_DELETED_LIBS="$(which check-deleted-libs)"
+
+# Report an error and exit
+perror () {
+  echo "Error: $1" >&2
+  exit 1
+}
+
+[ -x "$CHECK_DELETED_LIBS" ] || perror "$CHECK_DELETED_LIBS missing or not executable"
+
+if [ ! -r /etc/os-release ]; then
+  perror "Unable to read /etc/os-release, cannot identify the OS version"
+else
+  . /etc/os-release
+  [ -z "$NAME" -o "$NAME" != "Ubuntu" ] && perror "This script only supports Ubuntu (not $NAME)"
+fi
+
+restart_apache2 () {
+  local apache2ctl_bin="/usr/sbin/apache2ctl"
+
+  # Make sure the init script knows about this apache2 process
+  if [ -x "/etc/init.d/$service_name" -a -x "$apache2ctl_bin" ]; then
+    # This will not restart the master process but will at least
+    # take care of the children
+    service apache2 status >/dev/null && $apache2ctl_bin graceful >/dev/null
+  fi
+}
+
+restart_dbus () {
+   # Restarting dbus while lightdm is running breaks the graphical session
+   status lightdm 2>/dev/null | grep -qF running || restart_upstart dbus
+}
+
+restart_hup () {
+  local proc_name="$1"
+  pkill -HUP "$proc_name"
+}
+
+restart_service () {
+  local service_name="$1"
+
+  # Make sure the init script exists and the service was started by it
+  if [ -x "/etc/init.d/$service_name" ]; then
+    service "$service_name" status >/dev/null && service "$service_name" restart >/dev/null
+  fi
+}
+
+restart_upstart () {
+  local job_name="$1"
+
+  # Make sure Upstart job exist and Upstart is tracking the process
+  if [ -e "/etc/init/$job_name.conf" ]; then
+    status $job_name | grep -qF running && restart $job_name > /dev/null
+  fi
+}
+
+stop_start_upstart () {
+  local job_name="$1"
+
+  # Make sure Upstart job exist and Upstart is tracking the process
+  if [ -e "/etc/init/$job_name.conf" ]; then
+    status $job_name | grep -qF running && stop $job_name > /dev/null && start $job_name > /dev/null
+  fi
+}
+
+if [ "$#" -eq 1 ]; then
+  EXCLUDE_LIST="$1"
+else
+  EXCLUDE_LIST="''"
+fi
+
+$CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
+  case "$proc_name" in
+    acpid)
+      restart_upstart acpid
+      ;;
+    apache2)
+      restart_apache2
+      ;;
+    atd)
+      restart_upstart atd
+      ;;
+    cron)
+      restart_upstart cron
+      ;;
+    dbus-daemon)
+      restart_dbus
+      ;;
+    getty)
+      restart_hup getty
+      ;;
+    irqbalance)
+      restart_upstart irqbalance
+      ;;
+    libvirtd)
+      stop_start_upstart libvirt-bin
+      ;;
+    mdadm)
+      restart_service mdadm
+      ;;
+    nrpe)
+      restart_service nagios-nrpe-server
+      ;;
+    ntpd)
+      if [ -x /etc/init.d/openntpd ]; then
+        restart_service openntpd
+      else
+        restart_service ntp
+      fi
+      ;;
+    rsyslogd)
+      restart_upstart rsyslog
+      ;;
+    smartd)
+      restart_service smartd
+      ;;
+    sshd)
+      restart_upstart ssh
+      ;;
+    udevd|systemd-udevd)
+      restart_upstart udev
+      ;;
+    upstart-udev-br)
+      restart_upstart upstart-udev-bridge
+      ;;
+    upstart-socket-)
+      restart_upstart upstart-socket-bridge
+      ;;
+  esac
+done
