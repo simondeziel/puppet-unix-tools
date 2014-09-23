@@ -29,7 +29,9 @@ perror () {
   exit 1
 }
 
-[ -x "$CHECK_DELETED_LIBS" ] || perror "$CHECK_DELETED_LIBS missing or not executable"
+# Check if everything is there to be used
+[ -n "$CHECK_DELETED_LIBS" ] || p_error "check-deleted-libs binary is missing"
+[ -x "$CHECK_DELETED_LIBS" ] || p_error "$CHECK_DELETED_LIBS not executable"
 
 if [ ! -r /etc/os-release ]; then
   perror "Unable to read /etc/os-release, cannot identify the OS version"
