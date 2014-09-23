@@ -21,7 +21,7 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export ENV=
 export CDPATH=
 
-CHECK_DELETED_LIBS="$(which check-deleted-libs)"
+CHECK_DELETED_LIBS="$(/usr/bin/which check-deleted-libs 2>/dev/null)"
 
 # Report an error and exit
 perror () {
