@@ -29,11 +29,16 @@ class unix_tools {
   # none for now
 
   # /usr/local/sbin
-  file { ['check-deleted-libs','restart-svc']:
-    path   => "/usr/local/sbin/${name}",
-    source => "puppet:///modules/unix_tools/sbin/${name}",
-    owner  => 'root',
-    group  => 'root',
-    mode   => '0755',
+  file {
+    '/usr/local/sbin/check-deleted-libs':
+      source => 'puppet:///modules/unix_tools/sbin/check-deleted-libs',
+      owner  => 'root',
+      group  => 'root',
+      mode   => '0755';
+    '/usr/local/sbin/restart-svc':
+      source => 'puppet:///modules/unix_tools/sbin/restart-svc',
+      owner  => 'root',
+      group  => 'root',
+      mode   => '0755';
   }
 }
