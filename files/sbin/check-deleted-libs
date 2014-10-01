@@ -50,7 +50,7 @@ GREP_RE='[[:space:]]((/.+)?/(lib|bin/)[^/]+ \(deleted\)|\(deleted\)(/.+)?/(lib|b
 SED_RE='s#^/proc/\([0-9]\+\)/maps:.*#\1#'
 
 # Check if we can use a fast path (/proc/$pid/comm available and no prelink)
-if [ -e "/proc/1/comm" -a ! -x "$(which prelink)" ]; then # fast path
+if [ -e "/proc/1/comm" -a ! -x "$(/usr/bin/which prelink 2>/dev/null)" ]; then # fast path
   for pid in $(grep -m1 -HE "$GREP_RE" /proc/[0-9]*/maps 2>/dev/null | sed "$SED_RE"); do
     cat /proc/$pid/comm 2>/dev/null
   done | sort -u
