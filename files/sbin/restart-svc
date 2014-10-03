@@ -126,6 +126,14 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
     nrpe)
       restart_service nagios-nrpe-server
       ;;
+    nsd)
+      if [ -x "/etc/init.d/nsd" ]; then
+        restart_service nsd
+      elif [ -x "/etc/init.d/nsd3" ]; then
+        # nsd3's init script doesn't have "status" so just restart
+        service nsd3 restart >/dev/null
+      fi
+      ;;
     ntpd)
       if [ -x /etc/init.d/openntpd ]; then
         restart_service openntpd
