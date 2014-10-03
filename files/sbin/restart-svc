@@ -153,6 +153,9 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
     udevd|systemd-udevd)
       restart_upstart udev
       ;;
+    unbound)
+      restart_service unbound
+      ;;
     upstart-udev-br)
       restart_upstart upstart-udev-bridge
       ;;
