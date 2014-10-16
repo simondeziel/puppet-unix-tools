@@ -61,6 +61,13 @@ restart_hup () {
   pkill -HUP "$proc_name"
 }
 
+restart_nginx () {
+  if [ -x "/etc/init.d/nginx" ] && service nginx status >/dev/null; then
+    # Make sure the init script knows how to do in place upgrades (replace the master bin)
+    /etc/init.d/nginx 2>&1 | grep -qF upgrade && service nginx upgrade >/dev/null
+  fi
+}
+
 restart_service () {
   local service_name="$1"
 
@@ -122,6 +129,9 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
       ;;
     mdadm)
       restart_service mdadm
+      ;;
+    nginx)
+      restart_nginx
       ;;
     nrpe)
       restart_service nagios-nrpe-server
