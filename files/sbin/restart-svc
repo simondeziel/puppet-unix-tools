@@ -56,9 +56,10 @@ restart_dbus () {
    status lightdm 2>/dev/null | grep -qF running || restart_upstart dbus
 }
 
-restart_hup () {
-  local proc_name="$1"
-  pkill -HUP "$proc_name"
+send_signal () {
+  local signal="$1"
+  local proc_name="$2"
+  pkill -"$signal" "$proc_name"
 }
 
 restart_nginx () {
@@ -119,7 +120,7 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
       restart_dbus
       ;;
     getty)
-      restart_hup getty
+      send_signal hup getty
       ;;
     irqbalance)
       restart_upstart irqbalance
