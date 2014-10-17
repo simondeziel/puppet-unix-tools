@@ -59,7 +59,9 @@ restart_dbus () {
 send_signal () {
   local signal="$1"
   local proc_name="$2"
-  pkill -"$signal" "$proc_name"
+
+  # check if the signal is a valid one before sending it
+  /bin/kill -l | grep -qw "$signal" && pkill --signal "$signal" --exact "$proc_name"
 }
 
 restart_nginx () {
@@ -120,7 +122,7 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
       restart_dbus
       ;;
     getty)
-      send_signal hup getty
+      send_signal HUP getty
       ;;
     irqbalance)
       restart_upstart irqbalance
