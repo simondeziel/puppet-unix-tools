@@ -40,14 +40,13 @@ else
   [ -z "$NAME" -o "$NAME" != "Ubuntu" ] && perror "This script only supports Ubuntu (not $NAME)"
 fi
 
-restart_apache2 () {
-  local apache2ctl_bin="/usr/sbin/apache2ctl"
+service_action () {
+  local svc_name="$1"
+  local svc_action="$2"
 
-  # Make sure the init script knows about this apache2 process
-  if [ -x "/etc/init.d/$service_name" -a -x "$apache2ctl_bin" ]; then
-    # This will not restart the master process but will at least
-    # take care of the children
-    service apache2 status >/dev/null && $apache2ctl_bin graceful >/dev/null
+  # Make sure the init script exists and the service was started by it
+  if [ -x "/etc/init.d/$svc_name" ]; then
+    service "$svc_name" status >/dev/null && service "$svc_name" "$svc_action" >/dev/null
   fi
 }
 
@@ -62,22 +61,6 @@ send_signal () {
 
   # check if the signal is a valid one before sending it
   /bin/kill -l | grep -qw "$signal" && pkill --signal "$signal" --exact "$proc_name"
-}
-
-restart_nginx () {
-  if [ -x "/etc/init.d/nginx" ] && service nginx status >/dev/null; then
-    # Make sure the init script knows how to do in place upgrades (replace the master bin)
-    /etc/init.d/nginx 2>&1 | grep -qF upgrade && service nginx upgrade >/dev/null
-  fi
-}
-
-restart_service () {
-  local service_name="$1"
-
-  # Make sure the init script exists and the service was started by it
-  if [ -x "/etc/init.d/$service_name" ]; then
-    service "$service_name" status >/dev/null && service "$service_name" restart >/dev/null
-  fi
 }
 
 restart_upstart () {
@@ -110,7 +93,9 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
       restart_upstart acpid
       ;;
     apache2)
-      restart_apache2
+      # does a graceful restart that won't restart the
+      # master but will at least take care of the children
+      service_action apache2 reload
       ;;
     atd)
       restart_upstart atd
@@ -131,43 +116,50 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
       stop_start_upstart libvirt-bin
       ;;
     mdadm)
-      restart_service mdadm
+      service_action mdadm restart
       ;;
     nginx)
-      restart_nginx
+      # Make sure the init script knows how to do in place
+      # upgrades (replace the master bin)
+      if [ -x "/etc/init.d/nginx" ] && /etc/init.d/nginx 2>&1 | grep -qF upgrade; then
+        service_action nginx upgrade
+      fi
       ;;
     nrpe)
-      restart_service nagios-nrpe-server
+      service_action nagios-nrpe-server restart
       ;;
     nsd)
       if [ -x "/etc/init.d/nsd" ]; then
-        restart_service nsd
+        service_action nsd restart
       elif [ -x "/etc/init.d/nsd3" ]; then
-        # nsd3's init script doesn't have "status" so just restart
-        service nsd3 restart >/dev/null
+        # nsd3's init script doesn't have "status"
+        pgrep -x nsd > /dev/null && service nsd3 restart >/dev/null
       fi
       ;;
     ntpd)
       if [ -x /etc/init.d/openntpd ]; then
-        restart_service openntpd
+        service_action openntpd restart
       else
-        restart_service ntp
+        service_action ntp restart
       fi
       ;;
     rsyslogd)
       restart_upstart rsyslog
       ;;
     smartd)
-      restart_service smartd
+      service_action smartd restart
       ;;
     sshd)
       restart_upstart ssh
+      ;;
+    tlsmgr)
+      service_action postfix reload
       ;;
     udevd|systemd-udevd)
       restart_upstart udev
       ;;
     unbound)
-      restart_service unbound
+      service_action unbound restart
       ;;
     upstart-udev-br)
       restart_upstart upstart-udev-bridge
