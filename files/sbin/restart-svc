@@ -60,7 +60,7 @@ send_signal () {
   local proc_name="$2"
 
   # check if the signal is a valid one before sending it
-  /bin/kill -l | grep -qw "$signal" && pkill --signal "$signal" --exact "$proc_name"
+  /bin/kill -l | grep -qw "$signal" && pkill -"$signal" -x "$proc_name"
 }
 
 restart_upstart () {
