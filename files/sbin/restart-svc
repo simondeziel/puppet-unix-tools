@@ -40,6 +40,22 @@ else
   [ -z "$NAME" -o "$NAME" != "Ubuntu" ] && perror "This script only supports Ubuntu (not $NAME)"
 fi
 
+service_apache () {
+  local svc_name="$1"
+  local svc_action="$2"
+
+  # Make sure the init script exists and the service was started by it
+  if [ -x "/etc/init.d/$svc_name" ]; then
+    if service "$svc_name" status >/dev/null; then
+      # We want to ignore harmless but annoying messages like those:
+      #  "[Tue Dec 09 12:22:42 2014] [warn] NameVirtualHost *:443 has no VirtualHosts"
+      # but still have other errors reported. To do so we redirect stderr to stdout and
+      # discard stdout. This only leaves stderr so we can silence the specific warning.
+      service "$svc_name" "$svc_action" 2>&1 > /dev/null | grep ' [warn] NameVirtualHost .* has no VirtualHosts$'
+    fi
+  fi
+}
+
 service_action () {
   local svc_name="$1"
   local svc_action="$2"
@@ -52,7 +68,7 @@ service_action () {
 
 restart_dbus () {
    # Restarting dbus while lightdm is running breaks the graphical session
-   status lightdm 2>/dev/null | grep -qF running || restart_upstart dbus
+   status lightdm 2>/dev/null | grep -qF running || upstart_action dbus restart
 }
 
 send_signal () {
@@ -63,21 +79,20 @@ send_signal () {
   /bin/kill -l | grep -qw "$signal" && pkill -"$signal" -x "$proc_name"
 }
 
-restart_upstart () {
+upstart_action () {
   local job_name="$1"
+  local job_action="$2"
 
   # Make sure Upstart job exist and Upstart is tracking the process
-  if [ -e "/etc/init/$job_name.conf" ]; then
-    status $job_name | grep -qF running && restart $job_name > /dev/null
-  fi
-}
-
-stop_start_upstart () {
-  local job_name="$1"
-
-  # Make sure Upstart job exist and Upstart is tracking the process
-  if [ -e "/etc/init/$job_name.conf" ]; then
-    status $job_name | grep -qF running && stop $job_name > /dev/null && start $job_name > /dev/null
+  if [ -e "/etc/init/$job_name.conf" ] && status $job_name | grep -qF running; then
+    case "$job_action" in
+      stop_start)
+        stop "$job_name" > /dev/null && start "$job_name" > /dev/null
+        ;;
+      *)
+        "$job_action" "$job_name" > /dev/null
+        ;;
+    esac
   fi
 }
 
@@ -90,18 +105,18 @@ fi
 $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
   case "$proc_name" in
     acpid)
-      restart_upstart acpid
+      upstart_action acpid restart
       ;;
     apache2)
       # does a graceful restart that won't restart the
       # master but will at least take care of the children
-      service_action apache2 reload
+      service_apache apache2 reload
       ;;
     atd)
-      restart_upstart atd
+      upstart_action atd restart
       ;;
     cron)
-      restart_upstart cron
+      upstart_action cron restart
       ;;
     dbus-daemon)
       restart_dbus
@@ -110,10 +125,10 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
       send_signal HUP getty
       ;;
     irqbalance)
-      restart_upstart irqbalance
+      upstart_action irqbalance restart
       ;;
     libvirtd)
-      stop_start_upstart libvirt-bin
+      upstart_action libvirt-bin stop_start
       ;;
     mdadm)
       service_action mdadm restart
@@ -144,28 +159,29 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
       fi
       ;;
     rsyslogd)
-      restart_upstart rsyslog
+      upstart_action rsyslog restart
       ;;
     smartd)
       service_action smartd restart
       ;;
     sshd)
-      restart_upstart ssh
+      # make sure the config wouldn't cause problem on restart
+      sshd -T > /dev/null 2>&1 && upstart_action ssh restart
       ;;
     tlsmgr)
       service_action postfix reload
       ;;
     udevd|systemd-udevd)
-      restart_upstart udev
+      upstart_action udev restart
       ;;
     unbound)
       service_action unbound restart
       ;;
     upstart-udev-br)
-      restart_upstart upstart-udev-bridge
+      upstart_action upstart-udev-bridge restart
       ;;
     upstart-socket-)
-      restart_upstart upstart-socket-bridge
+      upstart_action upstart-socket-bridge restart
       ;;
   esac
 done
