@@ -102,7 +102,7 @@ else
   EXCLUDE_LIST="''"
 fi
 
-$CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read proc_name; do
+$CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
   case "$proc_name" in
     acpid)
       upstart_action acpid restart
