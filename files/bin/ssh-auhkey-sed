@@ -1,0 +1,73 @@
+#!/bin/sh
+
+SCRIPT_NAME="$(basename $0)"
+
+usage () {
+  cat << EOF
+Usage:
+  $SCRIPT_NAME [-h] -o "old key string" -n "new key string" -- file(s) to alter
+
+Options:
+ -h
+    Print help screen
+ -o
+    Old key string ("ssh-rsa AAAA1234oldkey5678 jdoe@example.com")
+ -n
+    New key string ("ssh-rsa AAAA8765newkey4321 jdoe@example.net")
+EOF
+}
+
+long_usage () {
+  cat << EOF
+Copyright (c) 2015 Simon Deziel
+
+Perform an inline replacement of an old SSH public key by newer one.
+
+EOF
+  usage
+  exit 0
+}
+
+escape_string () {
+  # escape / and . to avoid interactions with sed's regexp parser
+  printf "%s" "$1" | sed 's/\//\\\//g; s/\./\\\./g'
+}
+
+# Parse arguments
+while getopts ho:n: opt; do
+  case "$opt" in
+    h)   long_usage;;
+    o)   old_key="$OPTARG";;
+    n)   new_key="$OPTARG";;
+    \?)  usage; exit 1;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+if [ -z "$old_key" ]; then
+  printf "%s\n" "You need to provide the old SSH key (-o)" >&2
+  exit 1
+fi
+
+if [ -z "$new_key" ]; then
+  printf "%s\n" "You need to provide the new SSH key (-n)" >&2
+  exit 1
+fi
+
+for key in "$old_key" "$new_key"; do
+
+  # Check if passed keys have the proper format: starts with "ssh-" and has 3 fields
+  if [ "$(printf "%s" "$key" | awk '/^ssh-/ { print NF }')" != 3 ]; then
+    printf "%s\n" "The key (\"$key\") is illformed" >&2
+    exit 1
+  fi
+done
+
+# Escape char that could interfere with sed regex engine
+old_key="$(escape_string "$old_key")"
+new_key="$(escape_string "$new_key")"
+
+for f in "$@"; do
+  [ -w "$f" ] || { printf "%s\n" "$f not writable, skipping"; continue; }
+  sed -i "s/$old_key/$new_key/" "$f"
+done

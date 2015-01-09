@@ -26,7 +26,13 @@
 class unix_tools {
 
   # /usr/local/bin
-  # none for now
+  file {
+    '/usr/local/bin/ssh-auhkey-sed':
+      source => 'puppet:///modules/unix_tools/bin/ssh-auhkey-sed',
+      owner  => 'root',
+      group  => 'root',
+      mode   => '0755';
+  }
 
   # /usr/local/sbin
   file {
