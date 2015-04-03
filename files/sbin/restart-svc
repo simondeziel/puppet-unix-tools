@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2014 Simon Deziel <simon.deziel@gmail.com>
+# Copyright (c) 2014-2015 Simon Deziel <simon.deziel@gmail.com>
 
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -32,13 +32,10 @@ perror () {
 # Check if everything is there to be used
 [ -n "$CHECK_DELETED_LIBS" ] || p_error "check-deleted-libs binary is missing"
 [ -x "$CHECK_DELETED_LIBS" ] || p_error "$CHECK_DELETED_LIBS not executable"
+[ -r /etc/os-release ] || perror "Unable to read /etc/os-release, cannot identify the OS version"
 
-if [ ! -r /etc/os-release ]; then
-  perror "Unable to read /etc/os-release, cannot identify the OS version"
-else
-  . /etc/os-release
-  [ -z "$NAME" -o "$NAME" != "Ubuntu" ] && perror "This script only supports Ubuntu (not $NAME)"
-fi
+. /etc/os-release
+[ -z "$NAME" -o "$NAME" != "Ubuntu" ] && perror "This script only supports Ubuntu (not $NAME)"
 
 service_apache () {
   local svc_name="$1"
