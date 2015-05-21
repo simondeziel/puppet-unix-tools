@@ -61,4 +61,4 @@ fi
 
 pgrep $PGREP_ARGS | sed "$SED_RE" | while read -r pid vmname; do
   grep -q -m1 -E "$GREP_RE" /proc/$pid/maps 2>/dev/null && echo $vmname
-done | tr '\n' ' '
+done | paste -s -d " "
