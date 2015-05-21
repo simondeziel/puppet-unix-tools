@@ -41,6 +41,11 @@ class unix_tools {
       owner  => 'root',
       group  => 'root',
       mode   => '0755';
+    '/usr/local/sbin/check-qemu-outdated':
+      source => 'puppet:///modules/unix_tools/sbin/check-qemu-outdated',
+      owner  => 'root',
+      group  => 'root',
+      mode   => '0755';
     '/usr/local/sbin/restart-svc':
       source => 'puppet:///modules/unix_tools/sbin/restart-svc',
       owner  => 'root',
