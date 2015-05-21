@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Copyright (c) 2015 Simon Deziel <simon.deziel@gmail.com>
+
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# Explicitly set the PATH to that of ENV_SUPATH in /etc/login.defs and unset
+# various other variables. For details, see:
+# https://wiki.ubuntu.com/SecurityTeam/AppArmorPolicyReview#Execute_rules
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export ENV=
+export CDPATH=
+
+SCRIPT_NAME="$(basename $0)"
+OLD_PGREP_ARGS="-f -l ^/usr/bin/kvm"
+NEW_PGREP_ARGS="-f -a ^qemu-system-.+"
+
+p_error () {
+  echo "Error: $1" >&2
+  exit 1
+}
+
+long_usage () {
+  cat << EOF
+Copyright (c) 2015 Simon Deziel
+
+Report the names of QEMU VMs needing to be restart at the hypervisor level
+
+Usage:
+  $SCRIPT_NAME
+EOF
+  exit 0
+}
+
+# Check arguments
+[ "$#" -ne 0 ] && long_usage
+
+# Check if /proc/*/maps are readable by testing with PID=1
+cat /proc/1/maps >/dev/null 2>&1 || p_error "Unable to read /proc/1/maps, are you running $SCRIPT_NAME with root privileges?"
+
+SED_RE='s/^\([0-9]\+\).\+-name \([^ ]\+\) -m.\+/\1 \2/'
+GREP_RE='[[:space:]]((/.+)?/(lib|bin/)[^/]+ \(deleted\)|\(deleted\)(/.+)?/(lib|bin/)[^/]+)$'
+DISTRO_RELEASE="$(lsb_release -sr)"
+if [ "$DISTRO_RELEASE" = "14.04" ] ; then
+  PGREP_ARGS=$NEW_PGREP_ARGS
+elif [ "$DISTRO_RELEASE" = "12.04" ] ; then
+  PGREP_ARGS=$OLD_PGREP_ARGS
+else
+  perror "Unsupported distro code: $DISTRO_RELEASE"
+fi
+
+pgrep $PGREP_ARGS | sed "$SED_RE" | while read -r pid vmname; do
+  grep -q -m1 -E "$GREP_RE" /proc/$pid/maps 2>/dev/null && echo $vmname
+done | tr '\n' ' '
