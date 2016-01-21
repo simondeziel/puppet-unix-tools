@@ -46,7 +46,7 @@ EOF
 # Check if /proc/*/maps are readable by testing with PID=1
 cat /proc/1/maps >/dev/null 2>&1 || p_error "Unable to read /proc/1/maps, are you running $SCRIPT_NAME with root privileges?"
 
-GREP_RE='[[:space:]]((/.+)?/(lib|bin/)[^/]+ \(deleted\)|\(deleted\)(/.+)?/(lib|bin/)[^/]+)$'
+GREP_RE='[[:space:]]((/.+)?/(lib|s?bin/)[^/]+ \(deleted\)|\(deleted\)(/.+)?/(lib|s?bin/)[^/]+)$'
 SED_RE='s#^/proc/\([0-9]\+\)/maps:.*#\1#'
 
 # Check if we can use a fast path (/proc/$pid/comm available and no prelink)
