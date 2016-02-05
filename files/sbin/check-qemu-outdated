@@ -56,7 +56,7 @@ if [ "$DISTRO_RELEASE" = "14.04" ] ; then
 elif [ "$DISTRO_RELEASE" = "12.04" ] ; then
   PGREP_ARGS=$OLD_PGREP_ARGS
 else
-  perror "Unsupported distro code: $DISTRO_RELEASE"
+  p_error "Unsupported distro code: $DISTRO_RELEASE"
 fi
 
 pgrep $PGREP_ARGS | sed "$SED_RE" | while read -r pid vmname; do
