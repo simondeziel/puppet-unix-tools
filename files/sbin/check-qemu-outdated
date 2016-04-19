@@ -22,8 +22,11 @@ export ENV=
 export CDPATH=
 
 SCRIPT_NAME="$(basename $0)"
-OLD_PGREP_ARGS="-f -l ^/usr/bin/kvm"
-NEW_PGREP_ARGS="-f -a ^qemu-system-.+"
+if pgrep -V | grep -qF ' procps-ng '; then
+  PGREP_ARGS="-a -x '^qemu-system-.+'"
+else
+  PGREP_ARGS="-f -l ^/usr/bin/kvm"
+fi
 
 p_error () {
   echo "Error: $1" >&2
@@ -50,14 +53,6 @@ cat /proc/1/maps >/dev/null 2>&1 || p_error "Unable to read /proc/1/maps, are yo
 
 SED_RE='s/^\([0-9]\+\).\+ -name \([^ ]\+\).*/\1 \2/'
 GREP_RE='[[:space:]]((/.+)?/(lib|s?bin/)[^/]+ \(deleted\)|\(deleted\)(/.+)?/(lib|s?bin/)[^/]+)$'
-DISTRO_RELEASE="$(lsb_release -sr)"
-if [ "$DISTRO_RELEASE" = "14.04" ] ; then
-  PGREP_ARGS=$NEW_PGREP_ARGS
-elif [ "$DISTRO_RELEASE" = "12.04" ] ; then
-  PGREP_ARGS=$OLD_PGREP_ARGS
-else
-  p_error "Unsupported distro code: $DISTRO_RELEASE"
-fi
 
 pgrep $PGREP_ARGS | sed "$SED_RE" | while read -r pid vmname; do
   grep -q -m1 -E "$GREP_RE" /proc/$pid/maps 2>/dev/null && echo $vmname
