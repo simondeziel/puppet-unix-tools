@@ -49,7 +49,7 @@ EOF
 cat /proc/1/maps >/dev/null 2>&1 || p_error "Unable to read /proc/1/maps, are you running $SCRIPT_NAME with root privileges?"
 
 SED_RE='s/^\([0-9]\+\).\+ -name \([^ ]\+\).*/\1 \2/'
-GREP_RE='[[:space:]]((/.+)?/(lib|bin/)[^/]+ \(deleted\)|\(deleted\)(/.+)?/(lib|bin/)[^/]+)$'
+GREP_RE='[[:space:]]((/.+)?/(lib|s?bin/)[^/]+ \(deleted\)|\(deleted\)(/.+)?/(lib|s?bin/)[^/]+)$'
 DISTRO_RELEASE="$(lsb_release -sr)"
 if [ "$DISTRO_RELEASE" = "14.04" ] ; then
   PGREP_ARGS=$NEW_PGREP_ARGS
