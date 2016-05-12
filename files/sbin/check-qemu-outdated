@@ -23,7 +23,7 @@ export CDPATH=
 
 SCRIPT_NAME="$(basename $0)"
 if pgrep -V | grep -qF ' procps-ng '; then
-  PGREP_ARGS="-a -x '^qemu-system-.+'"
+  PGREP_ARGS="-a -x ^qemu-system-.+"
 else
   PGREP_ARGS="-f -l ^/usr/bin/kvm"
 fi
