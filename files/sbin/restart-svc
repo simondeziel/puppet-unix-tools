@@ -159,7 +159,7 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
       upstart_action rsyslog restart
       ;;
     smartd)
-      service_action smartd restart
+      service_action smartmontools restart
       ;;
     sshd)
       # make sure the config wouldn't cause problem on restart
