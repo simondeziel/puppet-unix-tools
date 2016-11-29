@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2014 Simon Deziel <simon.deziel@gmail.com>
+# Copyright (c) 2014,2016 Simon Deziel <simon.deziel@gmail.com>
 
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -30,7 +30,7 @@ p_error () {
 
 long_usage () {
   cat << EOF
-Copyright (c) 2014 Simon Deziel
+Copyright (c) 2014,2016 Simon Deziel
 
 Report the names of the processes using deleted libraries
 
