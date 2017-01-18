@@ -67,12 +67,6 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
     cron)
       service_action cron restart
       ;;
-    dbus-daemon)
-      # Restarting dbus while lightdm is running breaks
-      # the graphical session
-      service lightdm status 2>/dev/null | grep -qwF running \
-        || service_action dbus restart
-      ;;
     getty)
       # ttyX consoles started by Upstart are respawn on HUP
       pkill -HUP -x getty
