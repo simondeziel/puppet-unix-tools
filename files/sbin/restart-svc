@@ -45,14 +45,6 @@ service_action () {
   service "$svc_name" status >/dev/null 2>&1 && service "$svc_name" "$svc_action" >/dev/null
 }
 
-send_signal () {
-  local signal="$1"
-  local proc_name="$2"
-
-  # check if the signal is a valid one before sending it
-  /bin/kill -l | grep -qw "$signal" && pkill -"$signal" -x "$proc_name"
-}
-
 if [ "$#" -eq 1 ]; then
   EXCLUDE_LIST="$1"
 else
@@ -82,7 +74,8 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
         || service_action dbus restart
       ;;
     getty)
-      send_signal HUP getty
+      # ttyX consoles started by Upstart are respawn on HUP
+      pkill -HUP -x getty
       ;;
     irqbalance)
       service_action irqbalance restart
