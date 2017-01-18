@@ -45,34 +45,12 @@ service_action () {
   service "$svc_name" status >/dev/null 2>&1 && service "$svc_name" "$svc_action" >/dev/null
 }
 
-restart_dbus () {
-   # Restarting dbus while lightdm is running breaks the graphical session
-   status lightdm 2>/dev/null | grep -qF running || upstart_action dbus restart
-}
-
 send_signal () {
   local signal="$1"
   local proc_name="$2"
 
   # check if the signal is a valid one before sending it
   /bin/kill -l | grep -qw "$signal" && pkill -"$signal" -x "$proc_name"
-}
-
-upstart_action () {
-  local job_name="$1"
-  local job_action="$2"
-
-  # Make sure Upstart job exist and Upstart is tracking the process
-  if [ -e "/etc/init/$job_name.conf" ] && status $job_name | grep -qF running; then
-    case "$job_action" in
-      stop_start)
-        stop "$job_name" > /dev/null && start "$job_name" > /dev/null
-        ;;
-      *)
-        "$job_action" "$job_name" > /dev/null
-        ;;
-    esac
-  fi
 }
 
 if [ "$#" -eq 1 ]; then
@@ -84,7 +62,7 @@ fi
 $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
   case "$proc_name" in
     acpid)
-      upstart_action acpid restart
+      service_action acpid restart
       ;;
     apache2)
       # does a graceful restart that won't restart the
@@ -92,22 +70,25 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
       service_action apache2 reload
       ;;
     atd)
-      upstart_action atd restart
+      service_action atd restart
       ;;
     cron)
-      upstart_action cron restart
+      service_action cron restart
       ;;
     dbus-daemon)
-      restart_dbus
+      # Restarting dbus while lightdm is running breaks
+      # the graphical session
+      service lightdm status 2>/dev/null | grep -qwF running \
+        || service_action dbus restart
       ;;
     getty)
       send_signal HUP getty
       ;;
     irqbalance)
-      upstart_action irqbalance restart
+      service_action irqbalance restart
       ;;
     libvirtd)
-      upstart_action libvirt-bin stop_start
+      service_action libvirt-bin restart
       ;;
     mdadm)
       service_action mdadm restart
@@ -138,29 +119,29 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
       fi
       ;;
     rsyslogd)
-      upstart_action rsyslog restart
+      service_action rsyslog restart
       ;;
     smartd)
       service_action smartmontools restart
       ;;
     sshd)
       # make sure the config wouldn't cause problem on restart
-      sshd -T > /dev/null 2>&1 && upstart_action ssh restart
+      sshd -T > /dev/null 2>&1 && service_action ssh restart
       ;;
     tlsmgr)
       service_action postfix reload
       ;;
     udevd|systemd-udevd)
-      upstart_action udev restart
+      service_action udev restart
       ;;
     unbound)
       service_action unbound restart
       ;;
     upstart-udev-br)
-      upstart_action upstart-udev-bridge restart
+      service_action upstart-udev-bridge restart
       ;;
     upstart-socket-)
-      upstart_action upstart-socket-bridge restart
+      service_action upstart-socket-bridge restart
       ;;
   esac
 done
