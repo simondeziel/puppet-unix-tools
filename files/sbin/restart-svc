@@ -106,7 +106,7 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
       fi
       ;;
     ntpd)
-      if [ -x /etc/init.d/openntpd ]; then
+      if [ -x "/etc/init.d/openntpd" ]; then
         service_action openntpd restart
       else
         service_action ntp restart
