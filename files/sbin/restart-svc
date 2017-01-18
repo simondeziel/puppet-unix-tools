@@ -37,22 +37,6 @@ perror () {
 . /etc/os-release
 [ -z "$NAME" -o "$NAME" != "Ubuntu" ] && perror "This script only supports Ubuntu (not $NAME)"
 
-service_apache () {
-  local svc_name="$1"
-  local svc_action="$2"
-
-  # Make sure the init script exists and the service was started by it
-  if [ -x "/etc/init.d/$svc_name" ]; then
-    if service "$svc_name" status >/dev/null; then
-      # We want to ignore harmless but annoying messages like those:
-      #  "[Tue Dec 09 12:22:42 2014] [warn] NameVirtualHost *:443 has no VirtualHosts"
-      # but still have other errors reported. To do so we redirect stderr to stdout and
-      # discard stdout. This only leaves stderr so we can silence the specific warning.
-      service "$svc_name" "$svc_action" 2>&1 > /dev/null | grep ' [warn] NameVirtualHost .* has no VirtualHosts$'
-    fi
-  fi
-}
-
 service_action () {
   local svc_name="$1"
   local svc_action="$2"
@@ -107,7 +91,7 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
     apache2)
       # does a graceful restart that won't restart the
       # master but will at least take care of the children
-      service_apache apache2 reload
+      service_action apache2 reload
       ;;
     atd)
       upstart_action atd restart
