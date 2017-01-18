@@ -88,8 +88,9 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
       ;;
     nginx)
       # Make sure the init script knows how to do in place
-      # upgrades (replace the master bin)
-      if [ -x "/etc/init.d/nginx" ] && /etc/init.d/nginx 2>&1 | grep -qF upgrade; then
+      # upgrades (replace the master bin) by asking an invalid
+      # action and checking if "upgrade" is supported
+      if service nginx help 2>&1 | grep -qwF upgrade; then
         service_action nginx upgrade
       fi
       ;;
