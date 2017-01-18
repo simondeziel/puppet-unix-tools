@@ -41,10 +41,8 @@ service_action () {
   local svc_name="$1"
   local svc_action="$2"
 
-  # Make sure the init script exists and the service was started by it
-  if [ -x "/etc/init.d/$svc_name" ]; then
-    service "$svc_name" status >/dev/null && service "$svc_name" "$svc_action" >/dev/null
-  fi
+  # Make sure the service is running before taking any action
+  service "$svc_name" status >/dev/null 2>&1 && service "$svc_name" "$svc_action" >/dev/null
 }
 
 restart_dbus () {
