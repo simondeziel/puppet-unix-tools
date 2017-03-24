@@ -116,6 +116,9 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
       # make sure the config wouldn't cause problem on restart
       sshd -T > /dev/null 2>&1 && service_action ssh restart
       ;;
+    systemd-timesyn)
+      service_action systemd-timesyncd restart
+      ;;
     tlsmgr)
       service_action postfix reload
       ;;
