@@ -64,6 +64,10 @@ $CHECK_DELETED_LIBS | grep -vE "$EXCLUDE_LIST" | while read -r proc_name; do
     atd)
       service_action atd restart
       ;;
+    agetty)
+      # ttyS0 is a guess
+      service_action serial-getty@ttyS0 restart
+      ;;
     cron)
       service_action cron restart
       ;;
