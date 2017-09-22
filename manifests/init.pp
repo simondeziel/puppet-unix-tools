@@ -21,7 +21,7 @@
 #
 # === Copyright
 #
-# Copyright 2014 Simon Deziel
+# Copyright 2014,2017 Simon Deziel
 #
 class unix_tools {
 
@@ -36,16 +36,6 @@ class unix_tools {
 
   # /usr/local/sbin
   file {
-    '/usr/local/sbin/check-deleted-libs':
-      source => 'puppet:///modules/unix_tools/sbin/check-deleted-libs',
-      owner  => 'root',
-      group  => 'root',
-      mode   => '0755';
-    '/usr/local/sbin/check-qemu-outdated':
-      source => 'puppet:///modules/unix_tools/sbin/check-qemu-outdated',
-      owner  => 'root',
-      group  => 'root',
-      mode   => '0755';
     '/usr/local/sbin/restart-svc':
       source => 'puppet:///modules/unix_tools/sbin/restart-svc',
       owner  => 'root',
